@@ -1,0 +1,1 @@
+{"name":"paasta-chat-backend","private":true,"type":"module","scripts":{"start":"node --env-file=.env index.mjs","dev":"node --watch --env-file=.env index.mjs"},"engines":{"node":">=20.12"}}

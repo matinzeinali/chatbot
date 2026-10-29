@@ -33,7 +33,7 @@
 }
 
 @theme {
-  --font-sans: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Urbanist Variable", "Kalameh", ui-sans-serif, system-ui, sans-serif;
 
   --color-ink: #1b0e1d;
   --color-glow: #58255d;
@@ -90,4 +90,69 @@ html[lang="fa"] body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Thin custom scrollbar: a faint pill that brightens while the area is hovered. */
+.thin-scroll {
+  --scroll-size: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .thin-scroll {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  .thin-scroll::-webkit-scrollbar {
+    width: var(--scroll-size);
+    height: var(--scroll-size);
+  }
+
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: var(--scroll-inset, 0px);
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  .thin-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.28);
+  }
+
+  .thin-scroll::-webkit-scrollbar-thumb:hover,
+  .thin-scroll::-webkit-scrollbar-thumb:active {
+    background: rgb(255 255 255 / 0.5);
+  }
+
+  .thin-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Chat messages: a little wider (the desktop UI renders at ~0.68 scale) and kept off the panel's rounded corners. */
+.message-scroll {
+  --scroll-size: 6px;
+  --scroll-inset: 24px;
+}
+
+/* Chat history scrollbar sits on the same side as the history line (left in LTR). */
+.chat-scroll {
+  direction: rtl;
+}
+
+[dir="rtl"] .chat-scroll {
+  direction: ltr;
+}
+
+.chat-scroll > * {
+  direction: ltr;
+}
+
+[dir="rtl"] .chat-scroll > * {
+  direction: rtl;
 }

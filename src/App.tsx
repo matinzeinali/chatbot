@@ -9,6 +9,7 @@ import { PLACEHOLDER_REPLY, type Attachment, type Message } from "./data/message
 import type { ChatAction } from "./components/sidebar/ChatItemMenu";
 import { getTranslation, useLocale, type Locale } from "./context/LocaleContext";
 import ActionDialog, { type ActionDialogState } from "./components/ui/ActionDialog";
+import { customInstructions, selectedModel, sendChat, type ChatMessage } from "./lib/paastaApi";
 
 interface Conversation extends ChatSummary {
   groupId: string;
@@ -71,15 +72,6 @@ function replyIndexForPrompt(messages: Message[], promptIndex: number) {
     if (messages[index].role === "assistant") return index;
   }
   return -1;
-}
-
-function promptForReply(messages: Message[], replyIndex: number) {
-  const linkedPromptId = messages[replyIndex]?.replyToId;
-  if (linkedPromptId) return messages.find((message) => message.id === linkedPromptId)?.content ?? "";
-  for (let index = replyIndex - 1; index >= 0; index -= 1) {
-    if (messages[index].role === "user") return messages[index].content;
-  }
-  return "";
 }
 
 function makeStarterConversations(locale: Locale): Conversation[] {
@@ -175,6 +167,22 @@ function useUiScale() {
   return scale;
 }
 
+// The backend is text-only, so attachments are mentioned by name.
+function toChatHistory(messages: Message[]): ChatMessage[] {
+  const instructions = customInstructions();
+  return [
+    ...(instructions ? [{ role: "system" as const, content: instructions }] : []),
+    ...messages.map((message) => ({
+      role: message.role,
+      content: message.attachments?.length
+        ? `${message.content}
+
+[Attached: ${message.attachments.map((attachment) => attachment.name).join(", ")}]`
+        : message.content,
+    })),
+  ];
+}
+
 export default function App() {
   const { locale, t } = useLocale();
   const rtl = locale === "fa";
@@ -191,7 +199,7 @@ export default function App() {
     try { return localStorage.getItem(PROFILE_NAME_KEY) || user.name; } catch { return user.name; }
   });
   const toastTimer = useRef<number | undefined>(undefined);
-  const pendingTimers = useRef<number[]>([]);
+  const pendingRequests = useRef<AbortController[]>([]);
   const scale = useUiScale();
   const { background, blur } = useBackground();
 
@@ -216,7 +224,7 @@ export default function App() {
 
   useEffect(() => () => {
     window.clearTimeout(toastTimer.current);
-    pendingTimers.current.forEach((timer) => window.clearTimeout(timer));
+    pendingRequests.current.forEach((request) => request.abort());
   }, []);
 
   useEffect(() => {
@@ -233,7 +241,8 @@ export default function App() {
     if (!conversation) return [];
     return localizedMessages(conversation, locale);
   }, [conversations, activeId, locale, t]);
-  const groups: ChatGroup[] = useMemo(() => chatGroups.map((group) => ({
+  // Archived chats stay out of the sidebar history.
+  const groups: ChatGroup[] = useMemo(() => chatGroups.filter((group) => group.id !== "archive").map((group) => ({
     ...group,
     label: t(group.id),
     chats: conversations.filter((conversation) => conversation.groupId === group.id)
@@ -259,29 +268,32 @@ export default function App() {
       }, ...next];
     });
     setThinkingIds((current) => current.includes(id) ? current : [...current, id]);
-    const timer = window.setTimeout(() => {
-      setConversations((current) => current.map((conversation) => conversation.id === id
-        ? (() => {
-          const prompt = conversation.messages.find((message) => message.id === userMessage.id)?.content ?? content;
-          const previewGeneration = 0;
-          return {
+    const existing = conversations.find((conversation) => conversation.id === id);
+    const history = [...(existing ? localizedMessages(existing, locale) : []), userMessage];
+    const request = new AbortController();
+    pendingRequests.current.push(request);
+    sendChat(selectedModel(), toChatHistory(history), request.signal)
+      .then((reply) => {
+        setConversations((current) => current.map((conversation) => conversation.id === id
+          ? {
             ...conversation,
             updatedAt: Date.now(),
             messages: [...conversation.messages, {
               id: crypto.randomUUID(),
               role: "assistant",
-              content: makePreviewAnswer(locale, prompt, previewGeneration),
-              previewPrompt: prompt,
-              previewGeneration,
+              content: reply.message,
               replyToId: userMessage.id,
             }],
-          };
-        })()
-        : conversation));
-      setThinkingIds((current) => current.filter((thinkingId) => thinkingId !== id));
-      pendingTimers.current = pendingTimers.current.filter((pending) => pending !== timer);
-    }, 900);
-    pendingTimers.current.push(timer);
+          }
+          : conversation));
+      })
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") notify(`${t("replyFailed")} ${error.message}`);
+      })
+      .finally(() => {
+        setThinkingIds((current) => current.filter((thinkingId) => thinkingId !== id));
+        pendingRequests.current = pendingRequests.current.filter((pending) => pending !== request);
+      });
   };
 
   const selectChat = (id: string) => {
@@ -329,28 +341,37 @@ export default function App() {
     const conversation = conversations.find((item) => item.id === conversationId);
     const replyIndex = conversation?.messages.findIndex((message) => message.id === messageId) ?? -1;
     if (!conversation || replyIndex < 0 || conversation.messages[replyIndex].role !== "assistant") return;
-    const prompt = promptOverride ?? promptForReply(conversation.messages, replyIndex);
+    const reply = conversation.messages[replyIndex];
+    const history = localizedMessages(conversation, locale).slice(0, replyIndex);
+    if (promptOverride !== undefined) {
+      const promptIndex = reply.replyToId
+        ? history.findIndex((message) => message.id === reply.replyToId)
+        : history.map((message) => message.role).lastIndexOf("user");
+      if (promptIndex >= 0) history[promptIndex] = { ...history[promptIndex], content: promptOverride };
+    }
     setRegeneratingMessageIds((current) => current.includes(messageId) ? current : [...current, messageId]);
-    const timer = window.setTimeout(() => {
-      setConversations((current) => current.map((item) => item.id !== conversationId
-        ? item
-        : {
-          ...item,
-          updatedAt: Date.now(),
-          messages: item.messages.map((message) => message.id !== messageId
-            ? message
-            : {
-              ...message,
-              previewPrompt: prompt,
-              previewGeneration: (message.previewGeneration ?? 0) + 1,
-              content: makePreviewAnswer(locale, prompt, (message.previewGeneration ?? 0) + 1),
-            }),
-        }));
-      setRegeneratingMessageIds((current) => current.filter((id) => id !== messageId));
-      pendingTimers.current = pendingTimers.current.filter((pending) => pending !== timer);
-      notify(t("responseRegenerated"));
-    }, 850);
-    pendingTimers.current.push(timer);
+    const request = new AbortController();
+    pendingRequests.current.push(request);
+    sendChat(selectedModel(), toChatHistory(history), request.signal)
+      .then((result) => {
+        setConversations((current) => current.map((item) => item.id !== conversationId
+          ? item
+          : {
+            ...item,
+            updatedAt: Date.now(),
+            messages: item.messages.map((message) => message.id !== messageId
+              ? message
+              : { ...message, content: result.message, previewPrompt: undefined, previewGeneration: undefined }),
+          }));
+        notify(t("responseRegenerated"));
+      })
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") notify(`${t("replyFailed")} ${error.message}`);
+      })
+      .finally(() => {
+        setRegeneratingMessageIds((current) => current.filter((id) => id !== messageId));
+        pendingRequests.current = pendingRequests.current.filter((pending) => pending !== request);
+      });
   };
 
   const editPrompt = (messageId: string, content: string) => {

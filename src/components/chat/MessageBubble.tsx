@@ -15,7 +15,7 @@ interface MessageBubbleProps {
   onRegenerate?: (id: string) => void;
 }
 
-const messageActionClass = "grid size-8 cursor-pointer place-items-center rounded-lg border border-white/[0.07] bg-white/[0.035] text-white/50 transition duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50";
+const messageActionClass = "grid size-8 lg:size-10 cursor-pointer place-items-center rounded-lg border border-white/[0.07] bg-white/[0.035] text-white/50 transition duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50";
 
 export default function MessageBubble({
   message,
@@ -42,10 +42,10 @@ export default function MessageBubble({
   const actions = (
     <div role="toolbar" aria-label={t("messageActions")} className="flex items-center gap-1 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover/message:opacity-100 md:group-focus-within/message:opacity-100">
       <button type="button" aria-label={t("copyText")} title={t("copyText")} onClick={() => onCopy?.(message)} className={messageActionClass}>
-        <Copy className="size-3.5" aria-hidden="true" />
+        <Copy className="size-3.5 lg:size-[18px]" aria-hidden="true" />
       </button>
       <button type="button" aria-label={t("share")} title={t("share")} onClick={() => onShare?.(message)} className={messageActionClass}>
-        <Share2 className="size-3.5" aria-hidden="true" />
+        <Share2 className="size-3.5 lg:size-[18px]" aria-hidden="true" />
       </button>
       {isUser && onEdit && (
         <button
@@ -58,7 +58,7 @@ export default function MessageBubble({
           }}
           className={messageActionClass}
         >
-          <Pencil className="size-3.5" aria-hidden="true" />
+          <Pencil className="size-3.5 lg:size-[18px]" aria-hidden="true" />
         </button>
       )}
       {!isUser && onRegenerate && (
@@ -70,7 +70,7 @@ export default function MessageBubble({
           onClick={() => onRegenerate(message.id)}
           className={`${messageActionClass} disabled:cursor-wait disabled:opacity-50`}
         >
-          <RefreshCw className={`size-3.5 ${regenerating && !reduceMotion ? "animate-spin" : ""}`} aria-hidden="true" />
+          <RefreshCw className={`size-3.5 lg:size-[18px] ${regenerating && !reduceMotion ? "animate-spin" : ""}`} aria-hidden="true" />
         </button>
       )}
     </div>
@@ -98,7 +98,7 @@ export default function MessageBubble({
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 rows={Math.min(5, Math.max(2, draft.split("\n").length))}
-                className="max-h-40 min-h-14 w-full resize-y bg-transparent text-start text-[15px] leading-6 text-white outline-none placeholder:text-white/40"
+                className="max-h-40 min-h-14 w-full resize-y bg-transparent text-start text-[15px] leading-6 text-white outline-none lg:text-[21px] lg:leading-[1.6] placeholder:text-white/40"
               />
               <div className="mt-2 flex justify-end gap-2 border-t border-white/[0.08] pt-2">
                 <button type="button" onClick={() => setEditing(false)} className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-white/60 transition hover:bg-white/[0.06] hover:text-white">{t("cancel")}</button>
@@ -106,7 +106,7 @@ export default function MessageBubble({
               </div>
             </form>
           ) : message.content && (
-            <p dir="auto" className="m-0 max-w-full whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-white/15 px-4 py-2.5 text-[16px] leading-6 text-white rtl:rounded-br-2xl rtl:rounded-bl-md">
+            <p dir="auto" className="m-0 max-w-full whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-white/15 px-4 py-2.5 text-[16px] leading-6 text-white lg:rounded-3xl lg:rounded-br-lg lg:px-6 lg:py-3.5 lg:text-[22px] lg:leading-[1.65] rtl:rounded-br-2xl rtl:rounded-bl-md">
               {message.content}
             </p>
           )}
@@ -114,14 +114,14 @@ export default function MessageBubble({
         </div>
       ) : (
         <div className="relative flex max-w-[85%] items-start gap-3">
-          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-glass">
-            <Logo className="h-[18px] w-[13px] text-white" />
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-glass lg:size-11">
+            <Logo className="h-[18px] w-[13px] text-white lg:h-6 lg:w-[17px]" />
           </span>
           <div className="relative min-w-0">
-            <p dir="auto" className={`m-0 whitespace-pre-wrap break-words pt-1 text-[16px] leading-6 text-white/90 transition-opacity ${regenerating ? "opacity-55" : ""}`}>
+            <p dir="auto" className={`m-0 whitespace-pre-wrap break-words pt-1 text-[16px] leading-6 text-white/90 lg:pt-1.5 lg:text-[22px] lg:leading-[1.75] transition-opacity ${regenerating ? "opacity-55" : ""}`}>
               {message.content}
             </p>
-            {regenerating && <p role="status" className="m-0 mt-1 text-[11px] text-white/45">{t("regenerating")}</p>}
+            {regenerating && <p role="status" className="m-0 mt-1 text-[11px] text-white/45 lg:text-[15px]">{t("regenerating")}</p>}
             <div className="mt-1">{actions}</div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export function TypingIndicator() {
           <Logo className="h-[16px] w-[12px] text-white drop-shadow-[0_0_6px_rgb(255_255_255/0.6)]" />
         </motion.span>
       </span>
-      <div className="flex items-center gap-2 text-[12px] font-medium text-white/50">
+      <div className="flex items-center gap-2 text-[12px] font-medium text-white/50 lg:text-[16px]">
         <span>{t("thinkingLabel")}</span>
         <span className="flex items-center gap-1" aria-hidden="true">
           {[0, 1, 2].map((dot) => (

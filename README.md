@@ -2,7 +2,7 @@
 
 A bilingual (English / فارسی) AI chat workspace UI built with React, TypeScript, Vite and Tailwind CSS.
 
-> **Note:** This is a front-end preview. It is not connected to an AI model yet — assistant replies are placeholders until you plug in a model API.
+> **AI replies** come from Google Gemini (or Paasta) through the small backend in [`backend/`](backend/README.md). Set your key in `backend/server/.env`, then run `npm run server` next to `npm run dev`.
 
 ## Features
 

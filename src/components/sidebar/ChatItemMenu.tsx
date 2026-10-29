@@ -21,6 +21,8 @@ const entries: MenuEntry[] = [
   { action: "delete", label: "Delete chat", icon: Trash2, danger: true },
 ];
 
+const MENU_HEIGHT = 260;
+
 interface Props {
   title: string;
   pinned?: boolean;
@@ -32,9 +34,16 @@ interface Props {
 export default function ChatItemMenu({ title, pinned = false, archived = false, onAction, onOpenChange }: Props) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   const update = (next: boolean) => {
+    if (next && rootRef.current) {
+      // Flip the menu upward when it would be clipped by the scrolling chat list.
+      const bounds = rootRef.current.closest("[data-chat-scroll]")?.getBoundingClientRect();
+      const limit = bounds ? bounds.bottom : window.innerHeight;
+      setOpenUp(rootRef.current.getBoundingClientRect().bottom + MENU_HEIGHT > limit);
+    }
     setOpen(next);
     onOpenChange?.(next);
   };
@@ -73,7 +82,9 @@ export default function ChatItemMenu({ title, pinned = false, archived = false, 
       {open && (
         <div
           role="menu"
-          className="absolute end-0 top-full z-50 mt-1 w-[210px] rounded-2xl border border-white/10 bg-ink/95 p-1.5 shadow-[0_12px_40px_rgb(0_0_0/0.45)] backdrop-blur-xl"
+          className={`absolute end-0 z-50 w-[210px] rounded-2xl border border-white/10 bg-ink/95 p-1.5 shadow-[0_12px_40px_rgb(0_0_0/0.45)] backdrop-blur-xl ${
+            openUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
         >
           {entries.map(({ action, icon: Icon, danger }) => (
             <div key={action}>

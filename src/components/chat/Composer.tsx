@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent, type KeyboardEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Mic, Paperclip, Square } from "lucide-react";
+import { Mic, Paperclip, SendHorizontal, Square } from "lucide-react";
 import {
   ACCEPTED_TYPES,
   MAX_ATTACHMENTS,
@@ -8,7 +8,6 @@ import {
   type Attachment,
 } from "../../data/messages";
 import { useSpeechInput } from "../../hooks/useSpeechInput";
-import SendIcon from "../icons/SendIcon";
 import Logo from "../icons/Logo";
 import AttachmentPreview from "./AttachmentPreview";
 import { useLocale } from "../../context/LocaleContext";
@@ -47,6 +46,9 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
     if (!textarea) return;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+    // Only scroll once the text outgrows the max height; sub-pixel rounding under
+    // the desktop UI scale otherwise shows a scrollbar on a single line.
+    textarea.style.overflowY = textarea.scrollHeight > 160 ? "auto" : "hidden";
   }, [value]);
 
   const addFiles = (files: FileList | File[]) => {
@@ -152,7 +154,7 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       className={`group relative flex w-full flex-col rounded-[26px] border bg-glass shadow-[0_10px_40px_rgb(0_0_0/0.25)] transition-[transform,background-color,border-color,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/25 hover:shadow-[0_18px_55px_rgb(0_0_0/0.36),0_0_28px_rgb(255_255_255/0.09)] focus-within:-translate-y-0.5 focus-within:border-white/35 focus-within:bg-white/20 focus-within:shadow-[0_18px_55px_rgb(0_0_0/0.36),0_0_28px_rgb(255_255_255/0.08)] motion-reduce:transform-none motion-reduce:transition-none ${
-        compact ? "min-h-[96px]" : "min-h-[140px]"
+        compact ? "min-h-[88px]" : "min-h-[104px]"
       } ${dragging ? "border-dashed border-white/60 bg-white/25" : "border-white/15"}`}
     >
       {dragging && (
@@ -180,12 +182,15 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
       <textarea
         ref={textareaRef}
         id="prompt"
+        // Empty: follow the UI language so the placeholder sits on the right in Persian.
+        // Typing: follow the text itself.
+        dir={value ? "auto" : locale === "fa" ? "rtl" : "ltr"}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={speech.listening ? t("listening") : t("messagePlaceholder")}
-        rows={compact ? 1 : 2}
-        className="chat-composer-input max-h-40 min-h-[44px] flex-1 resize-none bg-transparent px-6 pb-1 pt-5 text-[18px] font-medium leading-[26px] text-white caret-white outline-none placeholder:text-placeholder/80"
+        rows={1}
+        className="chat-composer-input thin-scroll max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-6 pb-0 pt-4 text-[17px] font-medium leading-[26px] text-white caret-white outline-none placeholder:text-placeholder/80"
       />
 
       {error && (
@@ -194,7 +199,7 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
         </p>
       )}
 
-      <div className="flex items-center gap-1 px-3 pb-3">
+      <div className="flex items-center gap-1 px-3 pb-2.5">
         <input
           ref={fileInputRef}
           type="file"
@@ -234,10 +239,12 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
           aria-label={showLoading ? t("typing") : t("sendMessage")}
           aria-busy={showLoading}
           disabled={!canSend}
-          className={`ms-auto flex size-11 cursor-pointer items-center justify-center rounded-full text-white transition-[transform,background-color,box-shadow] duration-300 ease-out active:scale-95 disabled:cursor-not-allowed ${showLoading ? "disabled:opacity-100" : "disabled:opacity-40 disabled:hover:bg-white/20 disabled:active:scale-100"} ${
-            canSend
-              ? "bg-glow hover:scale-105 hover:brightness-110 hover:shadow-[0_0_22px_rgb(255_255_255/0.16)] group-hover:scale-105 group-hover:shadow-[0_0_22px_rgb(255_255_255/0.12)]"
-              : "bg-white/20 group-hover:scale-105 group-hover:bg-white/25"
+          className={`group/send ms-auto flex size-10 cursor-pointer items-center justify-center rounded-full transition-[transform,color,filter] duration-300 ease-out active:scale-90 disabled:cursor-not-allowed disabled:active:scale-100 ${
+            showLoading
+              ? "text-white"
+              : canSend
+                ? "text-white hover:scale-110 hover:drop-shadow-[0_0_10px_rgb(255_255_255/0.45)]"
+                : "text-white/30"
           }`}
         >
           {showLoading ? (
@@ -250,7 +257,11 @@ export default function Composer({ compact, thinking = false, onSend }: Props) {
               <Logo className="relative z-10 h-[15px] w-[11px] text-white drop-shadow-[0_0_5px_rgb(255_255_255/0.6)]" />
             </span>
           ) : (
-            <SendIcon className="h-5 w-[22px] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+            <SendHorizontal
+              strokeWidth={2}
+              className={`size-6 transition-transform duration-300 ease-out rtl:-scale-x-100 ${canSend ? "group-hover/send:translate-x-0.5 rtl:group-hover/send:-translate-x-0.5" : ""}`}
+              aria-hidden="true"
+            />
           )}
         </button>
       </div>

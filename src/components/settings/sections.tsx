@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import {
   Bell,
   Check,
@@ -17,6 +17,7 @@ import { BLUR_MAX, BLUR_MIN } from "../../data/backgrounds";
 import { Button, Field, Row, Slider, Toggle, inputClass } from "./controls";
 import DatePicker from "./DatePicker";
 import Select from "./Select";
+import { INSTRUCTIONS_SETTING_KEY, MODEL_SETTING_KEY, getFreeModels, selectedModel, type FreeModel } from "../../lib/paastaApi";
 import { getTranslation, useLocale, type Locale } from "../../context/LocaleContext";
 
 export interface SettingsCallbacks {
@@ -255,8 +256,21 @@ function PersonalizationSection({ onNotify }: SettingsCallbacks) {
 
 function AiSection({ onNotify }: SettingsCallbacks) {
   const { t } = useLocale();
-  const [model, setModel] = useState(() => readSetting("chatbot:ai-model", "Standard"));
-  const [instructions, setInstructions] = useState(() => readSetting("chatbot:ai-instructions", ""));
+  const [model, setModel] = useState(selectedModel);
+  const [models, setModels] = useState<FreeModel[]>([]);
+  const [modelsError, setModelsError] = useState(false);
+  const [instructions, setInstructions] = useState(() => readSetting(INSTRUCTIONS_SETTING_KEY, ""));
+  useEffect(() => {
+    let active = true;
+    getFreeModels()
+      .then((list) => {
+        if (!active) return;
+        setModels(list.models);
+        setModel((current) => list.models.some(({ id }) => id === current) ? current : list.default);
+      })
+      .catch(() => { if (active) setModelsError(true); });
+    return () => { active = false; };
+  }, []);
   return (
     <>
       <Field label={t("defaultModel")} htmlFor="ai-model">
@@ -264,13 +278,10 @@ function AiSection({ onNotify }: SettingsCallbacks) {
           id="ai-model"
           label={t("defaultModel")}
           value={model}
-          options={[
-            { value: "Standard", label: t("modelStandard") },
-            { value: "Advanced", label: t("modelAdvanced") },
-            { value: "Fast", label: t("modelFast") },
-          ]}
+          options={models.length ? models.map(({ id, name }) => ({ value: id, label: name })) : [{ value: model, label: model }]}
           onChange={setModel}
         />
+        {modelsError && <p role="alert" className="m-0 mt-2 text-[12px] text-red-300">{t("modelsUnavailable")}</p>}
       </Field>
       <Field label={t("customInstructions")} htmlFor="ai-instructions">
         <textarea
@@ -287,8 +298,8 @@ function AiSection({ onNotify }: SettingsCallbacks) {
         <Button
           variant="primary"
           onClick={() => {
-            saveSetting("chatbot:ai-model", model);
-            saveSetting("chatbot:ai-instructions", instructions);
+            saveSetting(MODEL_SETTING_KEY, model);
+            saveSetting(INSTRUCTIONS_SETTING_KEY, instructions);
             onNotify(t("aiSaved"));
           }}
         >{t("save")}</Button>

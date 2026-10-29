@@ -61,7 +61,9 @@ export default function Select({ value, options, onChange, label, id, className 
         onKeyDown={onKeyDown}
         className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/10 px-3.5 py-2.5 text-start text-[14px] text-white outline-none transition-colors hover:bg-white/15 focus-visible:border-white/30"
       >
-        <span className="truncate">{value}</span>
+        <span className="truncate">
+          {options.map((option) => typeof option === "string" ? { value: option, label: option } : option).find((option) => option.value === value)?.label ?? value}
+        </span>
         <ChevronDown
           className={`size-4 shrink-0 text-white/60 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           aria-hidden="true"

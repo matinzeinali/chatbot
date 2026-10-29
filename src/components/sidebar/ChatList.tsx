@@ -18,6 +18,7 @@ export default function ChatList({ groups, activeId, onSelect, onAction, emptyMe
       aria-label={t("history")}
       className="relative mt-[21.5px] min-h-0 flex-1 before:absolute before:bottom-0 before:left-0 before:top-2 before:w-px before:rounded-full before:bg-white/20 rtl:before:left-auto rtl:before:right-0"
     >
+      <div data-chat-scroll className="thin-scroll chat-scroll h-full overflow-y-auto overflow-x-hidden">
       {groups.length === 0 ? (
         <p role="status" className="m-0 ps-[18px] pt-2 text-[13px] text-white/55">{emptyMessage}</p>
       ) : groups.map((group) => (
@@ -45,6 +46,7 @@ export default function ChatList({ groups, activeId, onSelect, onAction, emptyMe
           </ul>
         </section>
       ))}
+      </div>
     </nav>
   );
 }

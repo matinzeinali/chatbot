@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Kalameh";
+  src: url("./assets/fonts/KalamehWeb-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kalameh";
+  src: url("./assets/fonts/KalamehWeb-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kalameh";
+  src: url("./assets/fonts/KalamehWeb-SemiBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kalameh";
+  src: url("./assets/fonts/KalamehWeb-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #1b0e1d;
+  --color-glow: #58255d;
+  --color-glass: rgb(217 217 217 / 0.2);
+  --color-placeholder: #dadada;
+
+  --radius-panel: 36px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.85);
+  outline-offset: 3px;
+}
+
+.chat-composer-input:focus-visible {
+  outline: none;
+}
+
+.action-dialog :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #17160f, 0 0 0 4px rgb(255 255 255 / 0.62);
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: #fff;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="fa"],
+html[lang="fa"] body {
+  font-family: "Kalameh", Tahoma, "Segoe UI", system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

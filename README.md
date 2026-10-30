@@ -38,9 +38,9 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173.
+Then open the URL Vite prints (usually http://localhost:5173).
 
-On Windows you can also double-click `run.bat`, which installs dependencies if needed, starts the dev server (and the backend, once `backend/server/.env` exists) and opens the browser.
+On Windows you can also double-click `run.bat`. It checks for Node.js 20.12+, installs dependencies if needed, starts the backend in its own window when an API key is set (and it isn't already running), then starts the dev server and opens the browser on whatever port Vite actually got.
 
 ### Scripts
 
@@ -58,7 +58,9 @@ On Windows you can also double-click `run.bat`, which installs dependencies if n
 3. Run `npm run server` next to `npm run dev`. Vite proxies `/api` to the backend.
 4. Pick a model in **Settings → AI**.
 
-Backend endpoints: `GET /api/health`, `GET /api/models`, `POST /api/chat`. Only text messages are sent to the model; streaming and server-side chat storage are not implemented. Keep your API key in `.env` only — never in `VITE_` variables or Git. See [`backend/README.md`](backend/README.md) for details.
+Send, regenerate and edit all send the conversation history to the backend. Custom instructions from **Settings → AI** are sent as a system message, and errors appear as a toast. If the saved model id is missing or no longer available, the server falls back to its default model (Gemini 3.6 Flash).
+
+Backend endpoints: `GET /api/health`, `GET /api/models`, `POST /api/chat`. Limitations: replies are text only (attachments are passed to the model by file name, not content), there is no streaming or server-side chat storage, and the Gemini model list is a static allowlist in `backend/server/models.mjs`. Pro models need billing enabled on your key. Keep your API key in `.env` only — never in `VITE_` variables or Git. See [`backend/README.md`](backend/README.md) for details.
 
 ## Project structure
 
